@@ -1,56 +1,71 @@
-# app/models/media.py
 from datetime import datetime
-from typing import Optional
-from sqlmodel import SQLModel, Field
+from typing import Optional, TYPE_CHECKING
+
+from sqlmodel import SQLModel, Field, Relationship
+
+if TYPE_CHECKING:
+    from .farm_set import NodeFarmSet
 
 
-# --- Çiftlik Medya ve Belge Modelleri ---
+# =========================================================
+# FARM MEDIA
+# =========================================================
+
 class NodeFarmMediaBase(SQLModel):
-    file_name: str
-    file_path: str
-    media_type: Optional[str] = None  # Resim, Video vb.
+    farm_set_id: Optional[int] = Field(
+        default=None,
+        foreign_key="nodefarmset.id"
+    )
+
+    media_id: Optional[int] = None
 
 
 class NodeFarmMedia(NodeFarmMediaBase, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    id: Optional[int] = Field(
+        default=None,
+        primary_key=True
+    )
 
-    farm_id: Optional[int] = Field(default=None, foreign_key="nodefarm.id")
+    creation_date: datetime = Field(
+        default_factory=datetime.utcnow
+    )
 
+    modification_date: datetime = Field(
+        default_factory=datetime.utcnow
+    )
+
+    farm_set: Optional["NodeFarmSet"] = Relationship(
+        back_populates="farm_media"
+    )
+
+
+# =========================================================
+# FARM DOC
+# =========================================================
 
 class NodeFarmDocBase(SQLModel):
-    title: str
-    file_path: str
-    doc_type: Optional[str] = None  # Tapu, Ruhsat, Sözleşme vb.
+    farm_set_id: Optional[int] = Field(
+        default=None,
+        foreign_key="nodefarmset.id"
+    )
+
+    doc_id: Optional[int] = None
 
 
 class NodeFarmDoc(NodeFarmDocBase, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    id: Optional[int] = Field(
+        default=None,
+        primary_key=True
+    )
 
-    farm_id: Optional[int] = Field(default=None, foreign_key="nodefarm.id")
+    creation_date: datetime = Field(
+        default_factory=datetime.utcnow
+    )
 
+    modification_date: datetime = Field(
+        default_factory=datetime.utcnow
+    )
 
-# --- Ekipman Modeli ---
-class NodeEquipmentBase(SQLModel):
-    name: str = Field(index=True)
-    model_year: Optional[int] = None
-    serial_number: Optional[str] = None
-
-
-class NodeEquipment(NodeEquipmentBase, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-
-    farm_id: Optional[int] = Field(default=None, foreign_key="nodefarm.id")
-
-
-# --- Sistem Log Modeli ---
-class NodeLogBase(SQLModel):
-    action: str
-    details: Optional[str] = None
-
-
-class NodeLog(NodeLogBase, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    farm_set: Optional["NodeFarmSet"] = Relationship(
+        back_populates="farm_docs"
+    )

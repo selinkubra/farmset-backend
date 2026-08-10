@@ -5,13 +5,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 
 from app.database import get_session
-from app.models import NodeUser
-from app.schemas import UserCreate, UserRead, UserUpdate
+from app.models import NodeLand
+from app.schemas import LandCreate, LandRead, LandUpdate
 
 
 router = APIRouter(
-    prefix="/users",
-    tags=["Users (Kullanıcılar)"],
+    prefix="/lands",
+    tags=["Lands"],
 )
 
 
@@ -21,20 +21,20 @@ router = APIRouter(
 
 @router.post(
     "/",
-    response_model=UserRead,
+    response_model=LandRead,
     status_code=status.HTTP_201_CREATED,
 )
-def create_user(
-    user_data: UserCreate,
+def create_land(
+    land_data: LandCreate,
     session: Session = Depends(get_session),
 ):
-    db_user = NodeUser.model_validate(user_data)
+    db_land = NodeLand.model_validate(land_data)
 
-    session.add(db_user)
+    session.add(db_land)
     session.commit()
-    session.refresh(db_user)
+    session.refresh(db_land)
 
-    return db_user
+    return db_land
 
 
 # =========================================================
@@ -43,20 +43,16 @@ def create_user(
 
 @router.get(
     "/",
-    response_model=List[UserRead],
+    response_model=List[LandRead],
 )
-def read_users(
-    skip: int = 0,
-    limit: int = 100,
+def get_lands(
     session: Session = Depends(get_session),
 ):
-    users = session.exec(
-        select(NodeUser)
-        .offset(skip)
-        .limit(limit)
+    lands = session.exec(
+        select(NodeLand)
     ).all()
 
-    return users
+    return lands
 
 
 # =========================================================
@@ -64,22 +60,22 @@ def read_users(
 # =========================================================
 
 @router.get(
-    "/{user_id}",
-    response_model=UserRead,
+    "/{land_id}",
+    response_model=LandRead,
 )
-def read_user(
-    user_id: int,
+def get_land(
+    land_id: int,
     session: Session = Depends(get_session),
 ):
-    user = session.get(NodeUser, user_id)
+    land = session.get(NodeLand, land_id)
 
-    if user is None:
+    if land is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Kullanıcı bulunamadı",
+            detail="Arazi bulunamadı",
         )
 
-    return user
+    return land
 
 
 # =========================================================
@@ -87,36 +83,36 @@ def read_user(
 # =========================================================
 
 @router.patch(
-    "/{user_id}",
-    response_model=UserRead,
+    "/{land_id}",
+    response_model=LandRead,
 )
-def update_user(
-    user_id: int,
-    user_data: UserUpdate,
+def update_land(
+    land_id: int,
+    land_data: LandUpdate,
     session: Session = Depends(get_session),
 ):
-    db_user = session.get(NodeUser, user_id)
+    db_land = session.get(NodeLand, land_id)
 
-    if db_user is None:
+    if db_land is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Kullanıcı bulunamadı",
+            detail="Arazi bulunamadı",
         )
 
-    update_data = user_data.model_dump(
+    update_data = land_data.model_dump(
         exclude_unset=True
     )
 
     for field, value in update_data.items():
-        setattr(db_user, field, value)
+        setattr(db_land, field, value)
 
-    db_user.modification_date = datetime.utcnow()
+    db_land.modification_date = datetime.utcnow()
 
-    session.add(db_user)
+    session.add(db_land)
     session.commit()
-    session.refresh(db_user)
+    session.refresh(db_land)
 
-    return db_user
+    return db_land
 
 
 # =========================================================
@@ -124,25 +120,25 @@ def update_user(
 # =========================================================
 
 @router.delete(
-    "/{user_id}",
+    "/{land_id}",
     status_code=status.HTTP_200_OK,
 )
-def delete_user(
-    user_id: int,
+def delete_land(
+    land_id: int,
     session: Session = Depends(get_session),
 ):
-    db_user = session.get(NodeUser, user_id)
+    db_land = session.get(NodeLand, land_id)
 
-    if db_user is None:
+    if db_land is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Kullanıcı bulunamadı",
+            detail="Arazi bulunamadı",
         )
 
-    session.delete(db_user)
+    session.delete(db_land)
     session.commit()
 
     return {
-        "message": "Kullanıcı başarıyla silindi",
-        "id": user_id,
+        "message": "Arazi başarıyla silindi",
+        "id": land_id,
     }

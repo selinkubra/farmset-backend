@@ -5,13 +5,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 
 from app.database import get_session
-from app.models import NodeUser
-from app.schemas import UserCreate, UserRead, UserUpdate
+from app.models import NodeFarmer
+from app.schemas import FarmerCreate, FarmerRead, FarmerUpdate
 
 
 router = APIRouter(
-    prefix="/users",
-    tags=["Users (Kullanıcılar)"],
+    prefix="/farmers",
+    tags=["Farmers"],
 )
 
 
@@ -21,20 +21,20 @@ router = APIRouter(
 
 @router.post(
     "/",
-    response_model=UserRead,
+    response_model=FarmerRead,
     status_code=status.HTTP_201_CREATED,
 )
-def create_user(
-    user_data: UserCreate,
+def create_farmer(
+    farmer_data: FarmerCreate,
     session: Session = Depends(get_session),
 ):
-    db_user = NodeUser.model_validate(user_data)
+    db_farmer = NodeFarmer.model_validate(farmer_data)
 
-    session.add(db_user)
+    session.add(db_farmer)
     session.commit()
-    session.refresh(db_user)
+    session.refresh(db_farmer)
 
-    return db_user
+    return db_farmer
 
 
 # =========================================================
@@ -43,20 +43,16 @@ def create_user(
 
 @router.get(
     "/",
-    response_model=List[UserRead],
+    response_model=List[FarmerRead],
 )
-def read_users(
-    skip: int = 0,
-    limit: int = 100,
+def get_farmers(
     session: Session = Depends(get_session),
 ):
-    users = session.exec(
-        select(NodeUser)
-        .offset(skip)
-        .limit(limit)
+    farmers = session.exec(
+        select(NodeFarmer)
     ).all()
 
-    return users
+    return farmers
 
 
 # =========================================================
@@ -64,22 +60,22 @@ def read_users(
 # =========================================================
 
 @router.get(
-    "/{user_id}",
-    response_model=UserRead,
+    "/{farmer_id}",
+    response_model=FarmerRead,
 )
-def read_user(
-    user_id: int,
+def get_farmer(
+    farmer_id: int,
     session: Session = Depends(get_session),
 ):
-    user = session.get(NodeUser, user_id)
+    farmer = session.get(NodeFarmer, farmer_id)
 
-    if user is None:
+    if farmer is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Kullanıcı bulunamadı",
+            detail="Çiftçi bulunamadı",
         )
 
-    return user
+    return farmer
 
 
 # =========================================================
@@ -87,36 +83,36 @@ def read_user(
 # =========================================================
 
 @router.patch(
-    "/{user_id}",
-    response_model=UserRead,
+    "/{farmer_id}",
+    response_model=FarmerRead,
 )
-def update_user(
-    user_id: int,
-    user_data: UserUpdate,
+def update_farmer(
+    farmer_id: int,
+    farmer_data: FarmerUpdate,
     session: Session = Depends(get_session),
 ):
-    db_user = session.get(NodeUser, user_id)
+    db_farmer = session.get(NodeFarmer, farmer_id)
 
-    if db_user is None:
+    if db_farmer is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Kullanıcı bulunamadı",
+            detail="Çiftçi bulunamadı",
         )
 
-    update_data = user_data.model_dump(
+    update_data = farmer_data.model_dump(
         exclude_unset=True
     )
 
     for field, value in update_data.items():
-        setattr(db_user, field, value)
+        setattr(db_farmer, field, value)
 
-    db_user.modification_date = datetime.utcnow()
+    db_farmer.modification_date = datetime.utcnow()
 
-    session.add(db_user)
+    session.add(db_farmer)
     session.commit()
-    session.refresh(db_user)
+    session.refresh(db_farmer)
 
-    return db_user
+    return db_farmer
 
 
 # =========================================================
@@ -124,25 +120,25 @@ def update_user(
 # =========================================================
 
 @router.delete(
-    "/{user_id}",
+    "/{farmer_id}",
     status_code=status.HTTP_200_OK,
 )
-def delete_user(
-    user_id: int,
+def delete_farmer(
+    farmer_id: int,
     session: Session = Depends(get_session),
 ):
-    db_user = session.get(NodeUser, user_id)
+    db_farmer = session.get(NodeFarmer, farmer_id)
 
-    if db_user is None:
+    if db_farmer is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Kullanıcı bulunamadı",
+            detail="Çiftçi bulunamadı",
         )
 
-    session.delete(db_user)
+    session.delete(db_farmer)
     session.commit()
 
     return {
-        "message": "Kullanıcı başarıyla silindi",
-        "id": user_id,
+        "message": "Çiftçi başarıyla silindi",
+        "id": farmer_id,
     }

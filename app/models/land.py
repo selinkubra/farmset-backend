@@ -1,59 +1,149 @@
-# app/models/land.py
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
+
 from sqlmodel import SQLModel, Field, Relationship
 
+if TYPE_CHECKING:
+    from .farm import NodeFarm, NodeBuilding
+    from .farm_set import NodeFarmSet
 
-# --- KML / KMZ Harita Veri Modelleri ---
+
+# =========================================================
+# KML
+# =========================================================
+
 class NodeKmlBase(SQLModel):
-    file_name: str
-    file_path: str
-    content: Optional[str] = None
+    kmz_id: Optional[int] = None
+
+    land_id: Optional[int] = Field(
+        default=None,
+        foreign_key="nodeland.id"
+    )
+
+    farm_set_id: Optional[int] = Field(
+        default=None,
+        foreign_key="nodefarmset.id"
+    )
+
+    kml_type: Optional[str] = None
+    kml_name: Optional[str] = None
+    kml_desc: Optional[str] = None
+
+    create_date: Optional[datetime] = None
+
+    display_order: Optional[int] = None
+
+    perimeter_m: Optional[float] = None
+    area_m2: Optional[float] = None
 
 
 class NodeKml(NodeKmlBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    land_id: Optional[int] = Field(default=None, foreign_key="nodeland.id")
+    creation_date: datetime = Field(default_factory=datetime.utcnow)
+    modification_date: datetime = Field(default_factory=datetime.utcnow)
 
+    farm_set: Optional["NodeFarmSet"] = Relationship(
+        back_populates="kml_files"
+    )
+
+
+# =========================================================
+# KMZ
+# =========================================================
 
 class NodeKmzBase(SQLModel):
-    file_name: str
-    file_path: str
+    land_id: Optional[int] = Field(
+        default=None,
+        foreign_key="nodeland.id"
+    )
+
+    doc_id: Optional[int] = None
+    doc_set_id: Optional[int] = None
+
+    farm_set_id: Optional[int] = Field(
+        default=None,
+        foreign_key="nodefarmset.id"
+    )
+
+    kmz_type: Optional[str] = None
+    kmz_name: Optional[str] = None
+    kmz_desc: Optional[str] = None
+
+    display_order: Optional[int] = None
+
+    cnt_kml: Optional[int] = None
+
+    sum_perimeter_m: Optional[float] = None
+    sum_area_m2: Optional[float] = None
 
 
 class NodeKmz(NodeKmzBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    land_id: Optional[int] = Field(default=None, foreign_key="nodeland.id")
+    creation_date: datetime = Field(default_factory=datetime.utcnow)
+    modification_date: datetime = Field(default_factory=datetime.utcnow)
 
-
-# --- Mahsul / Ürün Modeli ---
-class NodeCropBase(SQLModel):
-    name: str = Field(index=True)
-    season: Optional[str] = None
+    farm_set: Optional["NodeFarmSet"] = Relationship(
+        back_populates="kmz_files"
+    )
 
 
-class NodeCrop(NodeCropBase, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+# =========================================================
+# LAND
+# =========================================================
 
-    land_id: Optional[int] = Field(default=None, foreign_key="nodeland.id")
-
-
-# --- Arazi Modeli ---
 class NodeLandBase(SQLModel):
-    name: str = Field(index=True)
-    ada: Optional[str] = None
-    parsel: Optional[str] = None
-    area_sqm: Optional[float] = None  # Metrekare cinsinden alan
+    farm_id: Optional[int] = Field(
+        default=None,
+        foreign_key="nodefarm.id"
+    )
+
+    farm_set_id: Optional[int] = Field(
+        default=None,
+        foreign_key="nodefarmset.id"
+    )
+
+    status: Optional[str] = None
+
+    land_name: Optional[str] = None
+    land_type: Optional[str] = None
+    land_desc: Optional[str] = None
+
+    length: Optional[float] = None
+    width: Optional[float] = None
+
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
+    avg_altitude: Optional[float] = None
+
+    perimeter_m: Optional[float] = None
+    area_m2: Optional[float] = None
+
+    display_order: Optional[int] = None
 
 
 class NodeLand(NodeLandBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    # Çiftlik ilişkisi (Foreign Key)
-    farm_id: Optional[int] = Field(default=None, foreign_key="nodefarm.id")
+    creation_date: datetime = Field(default_factory=datetime.utcnow)
+    modification_date: datetime = Field(default_factory=datetime.utcnow)
+
+    farm: Optional["NodeFarm"] = Relationship(
+        back_populates="lands",
+        sa_relationship_kwargs={
+            "foreign_keys": "[NodeLand.farm_id]"
+        }
+    )
+
+    farm_set: Optional["NodeFarmSet"] = Relationship(
+        back_populates="lands"
+    )
+
+    buildings: List["NodeBuilding"] = Relationship(
+        back_populates="land",
+        sa_relationship_kwargs={
+            "foreign_keys": "[NodeBuilding.land_id]"
+        }
+    )

@@ -5,13 +5,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 
 from app.database import get_session
-from app.models import NodeUser
-from app.schemas import UserCreate, UserRead, UserUpdate
+from app.models import NodeFarmSet
 
 
 router = APIRouter(
-    prefix="/users",
-    tags=["Users (Kullanıcılar)"],
+    prefix="/farm-sets",
+    tags=["Farm Sets"],
 )
 
 
@@ -21,20 +20,18 @@ router = APIRouter(
 
 @router.post(
     "/",
-    response_model=UserRead,
+    response_model=NodeFarmSet,
     status_code=status.HTTP_201_CREATED,
 )
-def create_user(
-    user_data: UserCreate,
+def create_farm_set(
+    data: NodeFarmSet,
     session: Session = Depends(get_session),
 ):
-    db_user = NodeUser.model_validate(user_data)
-
-    session.add(db_user)
+    session.add(data)
     session.commit()
-    session.refresh(db_user)
+    session.refresh(data)
 
-    return db_user
+    return data
 
 
 # =========================================================
@@ -43,20 +40,18 @@ def create_user(
 
 @router.get(
     "/",
-    response_model=List[UserRead],
+    response_model=List[NodeFarmSet],
 )
-def read_users(
+def read_farm_sets(
     skip: int = 0,
     limit: int = 100,
     session: Session = Depends(get_session),
 ):
-    users = session.exec(
-        select(NodeUser)
+    return session.exec(
+        select(NodeFarmSet)
         .offset(skip)
         .limit(limit)
     ).all()
-
-    return users
 
 
 # =========================================================
@@ -64,22 +59,22 @@ def read_users(
 # =========================================================
 
 @router.get(
-    "/{user_id}",
-    response_model=UserRead,
+    "/{farm_set_id}",
+    response_model=NodeFarmSet,
 )
-def read_user(
-    user_id: int,
+def read_farm_set(
+    farm_set_id: int,
     session: Session = Depends(get_session),
 ):
-    user = session.get(NodeUser, user_id)
+    db_item = session.get(NodeFarmSet, farm_set_id)
 
-    if user is None:
+    if db_item is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Kullanıcı bulunamadı",
+            detail="Farm set bulunamadı",
         )
 
-    return user
+    return db_item
 
 
 # =========================================================
@@ -87,36 +82,41 @@ def read_user(
 # =========================================================
 
 @router.patch(
-    "/{user_id}",
-    response_model=UserRead,
+    "/{farm_set_id}",
+    response_model=NodeFarmSet,
 )
-def update_user(
-    user_id: int,
-    user_data: UserUpdate,
+def update_farm_set(
+    farm_set_id: int,
+    data: NodeFarmSet,
     session: Session = Depends(get_session),
 ):
-    db_user = session.get(NodeUser, user_id)
+    db_item = session.get(NodeFarmSet, farm_set_id)
 
-    if db_user is None:
+    if db_item is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Kullanıcı bulunamadı",
+            detail="Farm set bulunamadı",
         )
 
-    update_data = user_data.model_dump(
-        exclude_unset=True
+    update_data = data.model_dump(
+        exclude_unset=True,
+        exclude={
+            "id",
+            "creation_date",
+            "modification_date",
+        },
     )
 
     for field, value in update_data.items():
-        setattr(db_user, field, value)
+        setattr(db_item, field, value)
 
-    db_user.modification_date = datetime.utcnow()
+    db_item.modification_date = datetime.utcnow()
 
-    session.add(db_user)
+    session.add(db_item)
     session.commit()
-    session.refresh(db_user)
+    session.refresh(db_item)
 
-    return db_user
+    return db_item
 
 
 # =========================================================
@@ -124,25 +124,25 @@ def update_user(
 # =========================================================
 
 @router.delete(
-    "/{user_id}",
+    "/{farm_set_id}",
     status_code=status.HTTP_200_OK,
 )
-def delete_user(
-    user_id: int,
+def delete_farm_set(
+    farm_set_id: int,
     session: Session = Depends(get_session),
 ):
-    db_user = session.get(NodeUser, user_id)
+    db_item = session.get(NodeFarmSet, farm_set_id)
 
-    if db_user is None:
+    if db_item is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Kullanıcı bulunamadı",
+            detail="Farm set bulunamadı",
         )
 
-    session.delete(db_user)
+    session.delete(db_item)
     session.commit()
 
     return {
-        "message": "Kullanıcı başarıyla silindi",
-        "id": user_id,
+        "message": "Farm set başarıyla silindi",
+        "id": farm_set_id,
     }

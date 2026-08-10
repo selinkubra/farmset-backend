@@ -6,326 +6,97 @@ from sqlmodel import Session, select
 
 from app.database import get_session
 from app.models import (
-    NodeSoilType,
-    NodeSoil,
-    NodeSeason,
-    NodeCalendar,
-    NodeCalendarDay,
+    NodeBank,
+    NodeBankBranch,
+    NodeBankAccount,
+    NodeContract,
+    NodeContractType,
 )
-from app.schemas import (
-    SoilTypeCreate,
-    SoilTypeRead,
-    SoilTypeUpdate,
-    SoilCreate,
-    SoilRead,
-    SoilUpdate,
-    SeasonCreate,
-    SeasonRead,
-    SeasonUpdate,
-    CalendarCreate,
-    CalendarRead,
-    CalendarUpdate,
-    CalendarDayCreate,
-    CalendarDayRead,
-    CalendarDayUpdate,
-)
-
 
 router = APIRouter(
-    prefix="/environment",
-    tags=["Environment (Çevre ve Sezon)"],
+    prefix="/finance",
+    tags=["Finance (Finans)"],
 )
 
 
 # =========================================================
-# SOIL TYPE CRUD
-# =========================================================
-
-@router.post(
-    "/soil-types/",
-    response_model=SoilTypeRead,
-    status_code=status.HTTP_201_CREATED,
-)
-def create_soil_type(
-    data: SoilTypeCreate,
-    session: Session = Depends(get_session),
-):
-    db_item = NodeSoilType.model_validate(data)
-
-    session.add(db_item)
-    session.commit()
-    session.refresh(db_item)
-
-    return db_item
-
-
-@router.get(
-    "/soil-types/",
-    response_model=List[SoilTypeRead],
-)
-def read_soil_types(
-    session: Session = Depends(get_session),
-):
-    return session.exec(
-        select(NodeSoilType)
-    ).all()
-
-
-@router.get(
-    "/soil-types/{soil_type_id}",
-    response_model=SoilTypeRead,
-)
-def read_soil_type(
-    soil_type_id: int,
-    session: Session = Depends(get_session),
-):
-    db_item = session.get(NodeSoilType, soil_type_id)
-
-    if db_item is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Toprak tipi bulunamadı",
-        )
-
-    return db_item
-
-
-@router.patch(
-    "/soil-types/{soil_type_id}",
-    response_model=SoilTypeRead,
-)
-def update_soil_type(
-    soil_type_id: int,
-    data: SoilTypeUpdate,
-    session: Session = Depends(get_session),
-):
-    db_item = session.get(NodeSoilType, soil_type_id)
-
-    if db_item is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Toprak tipi bulunamadı",
-        )
-
-    for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(db_item, field, value)
-
-    db_item.modification_date = datetime.utcnow()
-
-    session.add(db_item)
-    session.commit()
-    session.refresh(db_item)
-
-    return db_item
-
-
-@router.delete(
-    "/soil-types/{soil_type_id}",
-    status_code=status.HTTP_200_OK,
-)
-def delete_soil_type(
-    soil_type_id: int,
-    session: Session = Depends(get_session),
-):
-    db_item = session.get(NodeSoilType, soil_type_id)
-
-    if db_item is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Toprak tipi bulunamadı",
-        )
-
-    session.delete(db_item)
-    session.commit()
-
-    return {
-        "message": "Toprak tipi başarıyla silindi",
-        "id": soil_type_id,
-    }
-
-
-# =========================================================
-# SOIL CRUD
+# BANK CRUD
 # =========================================================
 
 @router.post(
-    "/soils/",
-    response_model=SoilRead,
+    "/banks/",
+    response_model=NodeBank,
     status_code=status.HTTP_201_CREATED,
 )
-def create_soil(
-    data: SoilCreate,
+def create_bank(
+    data: NodeBank,
     session: Session = Depends(get_session),
 ):
-    db_item = NodeSoil.model_validate(data)
-
-    session.add(db_item)
+    session.add(data)
     session.commit()
-    session.refresh(db_item)
+    session.refresh(data)
 
-    return db_item
+    return data
 
 
 @router.get(
-    "/soils/",
-    response_model=List[SoilRead],
+    "/banks/",
+    response_model=List[NodeBank],
 )
-def read_soils(
-    session: Session = Depends(get_session),
-):
-    return session.exec(
-        select(NodeSoil)
-    ).all()
-
-
-@router.get(
-    "/soils/{soil_id}",
-    response_model=SoilRead,
-)
-def read_soil(
-    soil_id: int,
-    session: Session = Depends(get_session),
-):
-    db_item = session.get(NodeSoil, soil_id)
-
-    if db_item is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Toprak kaydı bulunamadı",
-        )
-
-    return db_item
-
-
-@router.patch(
-    "/soils/{soil_id}",
-    response_model=SoilRead,
-)
-def update_soil(
-    soil_id: int,
-    data: SoilUpdate,
-    session: Session = Depends(get_session),
-):
-    db_item = session.get(NodeSoil, soil_id)
-
-    if db_item is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Toprak kaydı bulunamadı",
-        )
-
-    for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(db_item, field, value)
-
-    db_item.modification_date = datetime.utcnow()
-
-    session.add(db_item)
-    session.commit()
-    session.refresh(db_item)
-
-    return db_item
-
-
-@router.delete(
-    "/soils/{soil_id}",
-    status_code=status.HTTP_200_OK,
-)
-def delete_soil(
-    soil_id: int,
-    session: Session = Depends(get_session),
-):
-    db_item = session.get(NodeSoil, soil_id)
-
-    if db_item is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Toprak kaydı bulunamadı",
-        )
-
-    session.delete(db_item)
-    session.commit()
-
-    return {
-        "message": "Toprak kaydı başarıyla silindi",
-        "id": soil_id,
-    }
-
-
-# =========================================================
-# SEASON CRUD
-# =========================================================
-
-@router.post(
-    "/seasons/",
-    response_model=SeasonRead,
-    status_code=status.HTTP_201_CREATED,
-)
-def create_season(
-    data: SeasonCreate,
-    session: Session = Depends(get_session),
-):
-    db_item = NodeSeason.model_validate(data)
-
-    session.add(db_item)
-    session.commit()
-    session.refresh(db_item)
-
-    return db_item
-
-
-@router.get(
-    "/seasons/",
-    response_model=List[SeasonRead],
-)
-def read_seasons(
+def read_banks(
     skip: int = 0,
     limit: int = 100,
     session: Session = Depends(get_session),
 ):
     return session.exec(
-        select(NodeSeason)
+        select(NodeBank)
         .offset(skip)
         .limit(limit)
     ).all()
 
 
 @router.get(
-    "/seasons/{season_id}",
-    response_model=SeasonRead,
+    "/banks/{bank_id}",
+    response_model=NodeBank,
 )
-def read_season(
-    season_id: int,
+def read_bank(
+    bank_id: int,
     session: Session = Depends(get_session),
 ):
-    db_item = session.get(NodeSeason, season_id)
+    db_item = session.get(NodeBank, bank_id)
 
     if db_item is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Sezon bulunamadı",
+            detail="Banka bulunamadı",
         )
 
     return db_item
 
 
 @router.patch(
-    "/seasons/{season_id}",
-    response_model=SeasonRead,
+    "/banks/{bank_id}",
+    response_model=NodeBank,
 )
-def update_season(
-    season_id: int,
-    data: SeasonUpdate,
+def update_bank(
+    bank_id: int,
+    data: NodeBank,
     session: Session = Depends(get_session),
 ):
-    db_item = session.get(NodeSeason, season_id)
+    db_item = session.get(NodeBank, bank_id)
 
     if db_item is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Sezon bulunamadı",
+            detail="Banka bulunamadı",
         )
 
-    for field, value in data.model_dump(exclude_unset=True).items():
+    update_data = data.model_dump(
+        exclude_unset=True,
+        exclude={"id", "creation_date", "modification_date"},
+    )
+
+    for field, value in update_data.items():
         setattr(db_item, field, value)
 
     db_item.modification_date = datetime.utcnow()
@@ -338,101 +109,108 @@ def update_season(
 
 
 @router.delete(
-    "/seasons/{season_id}",
+    "/banks/{bank_id}",
     status_code=status.HTTP_200_OK,
 )
-def delete_season(
-    season_id: int,
+def delete_bank(
+    bank_id: int,
     session: Session = Depends(get_session),
 ):
-    db_item = session.get(NodeSeason, season_id)
+    db_item = session.get(NodeBank, bank_id)
 
     if db_item is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Sezon bulunamadı",
+            detail="Banka bulunamadı",
         )
 
     session.delete(db_item)
     session.commit()
 
     return {
-        "message": "Sezon başarıyla silindi",
-        "id": season_id,
+        "message": "Banka başarıyla silindi",
+        "id": bank_id,
     }
 
 
 # =========================================================
-# CALENDAR CRUD
+# BANK BRANCH CRUD
 # =========================================================
 
 @router.post(
-    "/calendars/",
-    response_model=CalendarRead,
+    "/branches/",
+    response_model=NodeBankBranch,
     status_code=status.HTTP_201_CREATED,
 )
-def create_calendar(
-    data: CalendarCreate,
+def create_bank_branch(
+    data: NodeBankBranch,
     session: Session = Depends(get_session),
 ):
-    db_item = NodeCalendar.model_validate(data)
-
-    session.add(db_item)
+    session.add(data)
     session.commit()
-    session.refresh(db_item)
+    session.refresh(data)
 
-    return db_item
+    return data
 
 
 @router.get(
-    "/calendars/",
-    response_model=List[CalendarRead],
+    "/branches/",
+    response_model=List[NodeBankBranch],
 )
-def read_calendars(
+def read_bank_branches(
+    skip: int = 0,
+    limit: int = 100,
     session: Session = Depends(get_session),
 ):
     return session.exec(
-        select(NodeCalendar)
+        select(NodeBankBranch)
+        .offset(skip)
+        .limit(limit)
     ).all()
 
 
 @router.get(
-    "/calendars/{calendar_id}",
-    response_model=CalendarRead,
+    "/branches/{branch_id}",
+    response_model=NodeBankBranch,
 )
-def read_calendar(
-    calendar_id: int,
+def read_bank_branch(
+    branch_id: int,
     session: Session = Depends(get_session),
 ):
-    db_item = session.get(NodeCalendar, calendar_id)
+    db_item = session.get(NodeBankBranch, branch_id)
 
     if db_item is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Takvim bulunamadı",
+            detail="Banka şubesi bulunamadı",
         )
 
     return db_item
 
 
 @router.patch(
-    "/calendars/{calendar_id}",
-    response_model=CalendarRead,
+    "/branches/{branch_id}",
+    response_model=NodeBankBranch,
 )
-def update_calendar(
-    calendar_id: int,
-    data: CalendarUpdate,
+def update_bank_branch(
+    branch_id: int,
+    data: NodeBankBranch,
     session: Session = Depends(get_session),
 ):
-    db_item = session.get(NodeCalendar, calendar_id)
+    db_item = session.get(NodeBankBranch, branch_id)
 
     if db_item is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Takvim bulunamadı",
+            detail="Banka şubesi bulunamadı",
         )
 
-    for field, value in data.model_dump(exclude_unset=True).items():
+    update_data = data.model_dump(
+        exclude_unset=True,
+        exclude={"id", "creation_date", "modification_date"},
+    )
+
+    for field, value in update_data.items():
         setattr(db_item, field, value)
 
     db_item.modification_date = datetime.utcnow()
@@ -445,101 +223,108 @@ def update_calendar(
 
 
 @router.delete(
-    "/calendars/{calendar_id}",
+    "/branches/{branch_id}",
     status_code=status.HTTP_200_OK,
 )
-def delete_calendar(
-    calendar_id: int,
+def delete_bank_branch(
+    branch_id: int,
     session: Session = Depends(get_session),
 ):
-    db_item = session.get(NodeCalendar, calendar_id)
+    db_item = session.get(NodeBankBranch, branch_id)
 
     if db_item is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Takvim bulunamadı",
+            detail="Banka şubesi bulunamadı",
         )
 
     session.delete(db_item)
     session.commit()
 
     return {
-        "message": "Takvim başarıyla silindi",
-        "id": calendar_id,
+        "message": "Banka şubesi başarıyla silindi",
+        "id": branch_id,
     }
 
 
 # =========================================================
-# CALENDAR DAY CRUD
+# BANK ACCOUNT CRUD
 # =========================================================
 
 @router.post(
-    "/calendar-days/",
-    response_model=CalendarDayRead,
+    "/bank-accounts/",
+    response_model=NodeBankAccount,
     status_code=status.HTTP_201_CREATED,
 )
-def create_calendar_day(
-    data: CalendarDayCreate,
+def create_bank_account(
+    data: NodeBankAccount,
     session: Session = Depends(get_session),
 ):
-    db_item = NodeCalendarDay.model_validate(data)
-
-    session.add(db_item)
+    session.add(data)
     session.commit()
-    session.refresh(db_item)
+    session.refresh(data)
 
-    return db_item
+    return data
 
 
 @router.get(
-    "/calendar-days/",
-    response_model=List[CalendarDayRead],
+    "/bank-accounts/",
+    response_model=List[NodeBankAccount],
 )
-def read_calendar_days(
+def read_bank_accounts(
+    skip: int = 0,
+    limit: int = 100,
     session: Session = Depends(get_session),
 ):
     return session.exec(
-        select(NodeCalendarDay)
+        select(NodeBankAccount)
+        .offset(skip)
+        .limit(limit)
     ).all()
 
 
 @router.get(
-    "/calendar-days/{calendar_day_id}",
-    response_model=CalendarDayRead,
+    "/bank-accounts/{bank_account_id}",
+    response_model=NodeBankAccount,
 )
-def read_calendar_day(
-    calendar_day_id: int,
+def read_bank_account(
+    bank_account_id: int,
     session: Session = Depends(get_session),
 ):
-    db_item = session.get(NodeCalendarDay, calendar_day_id)
+    db_item = session.get(NodeBankAccount, bank_account_id)
 
     if db_item is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Takvim günü bulunamadı",
+            detail="Banka hesabı bulunamadı",
         )
 
     return db_item
 
 
 @router.patch(
-    "/calendar-days/{calendar_day_id}",
-    response_model=CalendarDayRead,
+    "/bank-accounts/{bank_account_id}",
+    response_model=NodeBankAccount,
 )
-def update_calendar_day(
-    calendar_day_id: int,
-    data: CalendarDayUpdate,
+def update_bank_account(
+    bank_account_id: int,
+    data: NodeBankAccount,
     session: Session = Depends(get_session),
 ):
-    db_item = session.get(NodeCalendarDay, calendar_day_id)
+    db_item = session.get(NodeBankAccount, bank_account_id)
 
     if db_item is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Takvim günü bulunamadı",
+            detail="Banka hesabı bulunamadı",
         )
 
-    for field, value in data.model_dump(exclude_unset=True).items():
+    update_data = data.model_dump(
+        exclude_unset=True,
+        exclude={"id", "creation_date", "modification_date"},
+    )
+
+    for field, value in update_data.items():
         setattr(db_item, field, value)
 
     db_item.modification_date = datetime.utcnow()
@@ -552,25 +337,249 @@ def update_calendar_day(
 
 
 @router.delete(
-    "/calendar-days/{calendar_day_id}",
+    "/bank-accounts/{bank_account_id}",
     status_code=status.HTTP_200_OK,
 )
-def delete_calendar_day(
-    calendar_day_id: int,
+def delete_bank_account(
+    bank_account_id: int,
     session: Session = Depends(get_session),
 ):
-    db_item = session.get(NodeCalendarDay, calendar_day_id)
+    db_item = session.get(NodeBankAccount, bank_account_id)
 
     if db_item is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Takvim günü bulunamadı",
+            detail="Banka hesabı bulunamadı",
         )
 
     session.delete(db_item)
     session.commit()
 
     return {
-        "message": "Takvim günü başarıyla silindi",
-        "id": calendar_day_id,
+        "message": "Banka hesabı başarıyla silindi",
+        "id": bank_account_id,
+    }
+
+
+# =========================================================
+# CONTRACT TYPE CRUD
+# =========================================================
+
+@router.post(
+    "/contract-types/",
+    response_model=NodeContractType,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_contract_type(
+    data: NodeContractType,
+    session: Session = Depends(get_session),
+):
+    session.add(data)
+    session.commit()
+    session.refresh(data)
+
+    return data
+
+
+@router.get(
+    "/contract-types/",
+    response_model=List[NodeContractType],
+)
+def read_contract_types(
+    session: Session = Depends(get_session),
+):
+    return session.exec(
+        select(NodeContractType)
+    ).all()
+
+
+@router.get(
+    "/contract-types/{contract_type_id}",
+    response_model=NodeContractType,
+)
+def read_contract_type(
+    contract_type_id: int,
+    session: Session = Depends(get_session),
+):
+    db_item = session.get(NodeContractType, contract_type_id)
+
+    if db_item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sözleşme tipi bulunamadı",
+        )
+
+    return db_item
+
+
+@router.patch(
+    "/contract-types/{contract_type_id}",
+    response_model=NodeContractType,
+)
+def update_contract_type(
+    contract_type_id: int,
+    data: NodeContractType,
+    session: Session = Depends(get_session),
+):
+    db_item = session.get(NodeContractType, contract_type_id)
+
+    if db_item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sözleşme tipi bulunamadı",
+        )
+
+    update_data = data.model_dump(
+        exclude_unset=True,
+        exclude={"id", "creation_date", "modification_date"},
+    )
+
+    for field, value in update_data.items():
+        setattr(db_item, field, value)
+
+    db_item.modification_date = datetime.utcnow()
+
+    session.add(db_item)
+    session.commit()
+    session.refresh(db_item)
+
+    return db_item
+
+
+@router.delete(
+    "/contract-types/{contract_type_id}",
+    status_code=status.HTTP_200_OK,
+)
+def delete_contract_type(
+    contract_type_id: int,
+    session: Session = Depends(get_session),
+):
+    db_item = session.get(NodeContractType, contract_type_id)
+
+    if db_item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sözleşme tipi bulunamadı",
+        )
+
+    session.delete(db_item)
+    session.commit()
+
+    return {
+        "message": "Sözleşme tipi başarıyla silindi",
+        "id": contract_type_id,
+    }
+
+
+# =========================================================
+# CONTRACT CRUD
+# =========================================================
+
+@router.post(
+    "/contracts/",
+    response_model=NodeContract,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_contract(
+    data: NodeContract,
+    session: Session = Depends(get_session),
+):
+    session.add(data)
+    session.commit()
+    session.refresh(data)
+
+    return data
+
+
+@router.get(
+    "/contracts/",
+    response_model=List[NodeContract],
+)
+def read_contracts(
+    skip: int = 0,
+    limit: int = 100,
+    session: Session = Depends(get_session),
+):
+    return session.exec(
+        select(NodeContract)
+        .offset(skip)
+        .limit(limit)
+    ).all()
+
+
+@router.get(
+    "/contracts/{contract_id}",
+    response_model=NodeContract,
+)
+def read_contract(
+    contract_id: int,
+    session: Session = Depends(get_session),
+):
+    db_item = session.get(NodeContract, contract_id)
+
+    if db_item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sözleşme bulunamadı",
+        )
+
+    return db_item
+
+
+@router.patch(
+    "/contracts/{contract_id}",
+    response_model=NodeContract,
+)
+def update_contract(
+    contract_id: int,
+    data: NodeContract,
+    session: Session = Depends(get_session),
+):
+    db_item = session.get(NodeContract, contract_id)
+
+    if db_item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sözleşme bulunamadı",
+        )
+
+    update_data = data.model_dump(
+        exclude_unset=True,
+        exclude={"id", "creation_date", "modification_date"},
+    )
+
+    for field, value in update_data.items():
+        setattr(db_item, field, value)
+
+    db_item.modification_date = datetime.utcnow()
+
+    session.add(db_item)
+    session.commit()
+    session.refresh(db_item)
+
+    return db_item
+
+
+@router.delete(
+    "/contracts/{contract_id}",
+    status_code=status.HTTP_200_OK,
+)
+def delete_contract(
+    contract_id: int,
+    session: Session = Depends(get_session),
+):
+    db_item = session.get(NodeContract, contract_id)
+
+    if db_item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sözleşme bulunamadı",
+        )
+
+    session.delete(db_item)
+    session.commit()
+
+    return {
+        "message": "Sözleşme başarıyla silindi",
+        "id": contract_id,
     }

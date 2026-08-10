@@ -1,20 +1,18 @@
-# database.py
-from sqlmodel import SQLModel, create_engine, Session
+from sqlmodel import SQLModel, Session, create_engine
 
-# SQLite yerel veritabanı dosyasının adı
-sqlite_file_name = "farm_database.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
+DATABASE_URL = "sqlite:///./farm_database.db"
 
-# SQLite için thread güvenlik ayarıyla engine oluşturma
-engine = create_engine(sqlite_url, connect_args={"check_same_thread": False})
+engine = create_engine(
+    DATABASE_URL,
+    echo=True,
+    connect_args={"check_same_thread": False},
+)
 
 
 def create_db_and_tables():
-    """models.py içinde tanımlı tüm SQLModel tablolarını SQLite veritabanında otomatik oluşturur."""
     SQLModel.metadata.create_all(engine)
 
 
 def get_session():
-    """FastAPI uç noktalarında (endpoints) veritabanı oturumu açmak ve iş bitince kapatmak için kullanılır."""
     with Session(engine) as session:
         yield session
